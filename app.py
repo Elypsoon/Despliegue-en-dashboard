@@ -34,7 +34,6 @@ st.markdown("""
         padding-bottom: 0.5rem;
     }
     .metric-card {
-        background-color: #f8f9fa;
         border-radius: 10px;
         padding: 1rem;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -335,6 +334,56 @@ def display_multiple_linear_regression(filtered_df, numeric_cols):
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
+                
+            # Matriz de correlaciones
+            st.subheader("Matriz de correlaciones")
+            
+            with st.expander("Configurar matriz de correlaciones", expanded=True):
+                col1, col2 = st.columns([1, 1])
+                
+                with col1:
+                    # Seleccionar variables para la matriz de correlación
+                    default_vars = [y_var] + x_vars
+                    if len(default_vars) > 5:
+                        default_vars = default_vars[:5]  # Limitar a 5 variables por defecto
+                    
+                    corr_vars = st.multiselect(
+                        "Variables para correlación", 
+                        numeric_cols, 
+                        default=default_vars
+                    )
+                
+                with col2:
+                    corr_method = st.radio(
+                        "Método de correlación",
+                        ["pearson", "spearman", "kendall"],
+                        horizontal=True
+                    )
+            
+            if not corr_vars or len(corr_vars) < 2:
+                st.warning("Selecciona al menos dos variables para generar la matriz de correlaciones.")
+            else:
+                # Calcular matriz de correlación
+                corr_matrix = filtered_df[corr_vars].corr(method=corr_method)
+                
+                # Crear heatmap con plotly
+                fig_corr = px.imshow(
+                    corr_matrix,
+                    text_auto=True,
+                    color_continuous_scale='RdBu_r',
+                    title=f"Matriz de correlación ({corr_method})",
+                    aspect="auto",
+                    labels=dict(color="Correlación")
+                )
+                
+                fig_corr.update_layout(
+                    height=max(400, len(corr_vars)*40),
+                    template="plotly_white",
+                )
+                
+                st.plotly_chart(fig_corr, use_container_width=True)
+                
+            
 
 def display_logistic_regression(filtered_df, numeric_cols):
     """
@@ -432,28 +481,13 @@ def display_logistic_regression(filtered_df, numeric_cols):
                             st.metric("Sensibilidad", f"{sensitivity:.4f}")
                     
                     with col2:
-                        # Curva ROC
-                        fpr, tpr, _ = roc_curve(y, predictions)
-                        roc_auc = auc(fpr, tpr)
-                        
-                        fig = px.line(x=fpr, y=tpr,
-                                      labels={'x': 'Tasa de falsos positivos', 'y': 'Tasa de verdaderos positivos'},
-                                      title=f'Curva ROC (AUC = {roc_auc:.4f})')
-                        
-                        fig.add_shape(
-                            type='line',
-                            line=dict(dash='dash'),
-                            x0=0, x1=1, y0=0, y1=1
-                        )
-                        
-                        st.plotly_chart(fig, use_container_width=True)
                         
                         # Matriz de confusión mejorada
                         st.subheader("Matriz de confusión")
                         cm = confusion_matrix(y, pred_classes)
                         
                         # Crear matriz de confusión visual con plotly
-                        cm_labels = ['Clase 0', 'Clase 1']
+                        cm_labels = ['Positivo', 'Negativo']
                         cm_fig = px.imshow(cm, 
                                            labels=dict(x="Predicción", y="Real", color="Cantidad"),
                                            x=cm_labels, 
