@@ -101,7 +101,7 @@ def display_general_summary(filtered_df):
     
     # Estadísticas descriptivas
     with st.expander("Estadísticas numéricas", expanded=True):
-        st.dataframe(filtered_df.describe().style.highlight_max(axis=0), use_container_width=True)
+        st.dataframe(filtered_df.describe(), use_container_width=True)
 
     # Reporte automático
     with st.expander("Reporte automático general", expanded=False):
